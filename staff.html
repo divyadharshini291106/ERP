@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en" class="role-staff">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Staff Portal — MIT College ERP</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+</head>
+<body class="portal-layout role-staff">
+
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+<aside class="sidebar" id="sidebar" role="navigation" aria-label="Staff navigation">
+  <div class="sidebar-header">
+    <div class="sidebar-logo" aria-hidden="true">👨‍🏫</div>
+    <div>
+      <div class="sidebar-title">MIT ERP</div>
+      <div class="sidebar-subtitle">Staff Portal</div>
+    </div>
+  </div>
+  <nav class="sidebar-nav"><ul id="sidebar-nav"></ul></nav>
+  <div class="sidebar-footer">
+    <div class="sidebar-user">
+      <div class="user-avatar" style="background:var(--staff-accent);" id="user-avatar" aria-hidden="true">S</div>
+      <div class="user-info-text">
+        <div class="uname" id="user-name">Staff</div>
+        <div class="urole" id="user-role">Staff</div>
+      </div>
+    </div>
+    <button class="btn-logout" onclick="Auth.logout()">🚪 Logout</button>
+  </div>
+</aside>
+
+<header class="topbar" role="banner">
+  <div class="topbar-left">
+    <button id="sidebar-toggle" aria-label="Toggle sidebar">☰</button>
+    <span class="page-title" id="page-title">Dashboard</span>
+  </div>
+  <div class="topbar-right">
+    <div class="topbar-user">
+      <div class="topbar-name" id="topbar-name">Staff</div>
+      <span class="topbar-role" style="background:var(--staff-accent);">Staff</span>
+    </div>
+    <div class="topbar-avatar" style="background:var(--staff-accent);" aria-hidden="true">S</div>
+  </div>
+</header>
+
+<main class="main-content" id="main-content" role="main">
+
+  <!-- ========== DASHBOARD ========== -->
+  <section class="section active" id="sec-dashboard" aria-label="Staff Dashboard">
+    <div class="page-header">
+      <h2>Good morning! 👋</h2>
+      <p class="text-muted" id="staff-greeting">Loading your schedule…</p>
+    </div>
+    <div class="stats-grid" id="staff-stats"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;" class="dash-grid">
+      <div class="card">
+        <div class="card-header"><h3>📅 Today's Classes</h3></div>
+        <div class="card-body" id="today-classes"></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>📢 Announcements</h3></div>
+        <div class="card-body" id="staff-announcements"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== ATTENDANCE ========== -->
+  <section class="section" id="sec-attendance" aria-label="Mark Attendance">
+    <div class="section-header">
+      <h2>📋 Mark Attendance</h2>
+    </div>
+    <div class="card" style="margin-bottom:1rem;">
+      <div class="card-body">
+        <div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-end;">
+          <div class="form-group" style="margin-bottom:0;flex:1;min-width:140px;">
+            <label for="att-date">Date</label>
+            <input type="date" id="att-date" class="form-control" />
+          </div>
+          <div class="form-group" style="margin-bottom:0;flex:2;min-width:200px;">
+            <label for="att-subject">Subject</label>
+            <select id="att-subject" class="form-control" onchange="loadAttendanceSheet()">
+              <option value="">Select subject…</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" onclick="loadAttendanceSheet()" style="height:42px;">Load</button>
+        </div>
+      </div>
+    </div>
+    <div class="card" id="att-sheet-card" style="display:none;">
+      <div class="card-header">
+        <h3 id="att-sheet-title">Attendance Sheet</h3>
+        <div class="gap-row">
+          <button class="btn btn-sm btn-outline" onclick="markAll('present')">✅ All Present</button>
+          <button class="btn btn-sm btn-outline" onclick="markAll('absent')">❌ All Absent</button>
+          <button class="btn btn-primary btn-sm"  onclick="saveAttendance()">💾 Save</button>
+        </div>
+      </div>
+      <div class="card-body" id="att-sheet"></div>
+    </div>
+  </section>
+
+  <!-- ========== MARKS ========== -->
+  <section class="section" id="sec-marks" aria-label="Internal Marks">
+    <div class="section-header">
+      <h2>📝 Internal Marks</h2>
+    </div>
+    <div class="card" style="margin-bottom:1rem;">
+      <div class="card-body">
+        <div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-end;">
+          <div class="form-group" style="margin-bottom:0;flex:2;min-width:200px;">
+            <label for="marks-subject">Subject</label>
+            <select id="marks-subject" class="form-control" onchange="loadMarksSheet()">
+              <option value="">Select subject…</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" onclick="loadMarksSheet()" style="height:42px;">Load</button>
+        </div>
+      </div>
+    </div>
+    <div class="card" id="marks-sheet-card" style="display:none;">
+      <div class="card-header">
+        <h3 id="marks-sheet-title">Marks Entry</h3>
+        <button class="btn btn-primary btn-sm" onclick="saveMarks()">💾 Save Marks</button>
+      </div>
+      <div class="card-body" id="marks-sheet">
+        <p class="text-muted" style="font-size:.82rem;margin-bottom:.75rem;">
+          Max: Internal 1 = 30, Internal 2 = 30, Assignment = 15
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== STUDENTS ========== -->
+  <section class="section" id="sec-students" aria-label="My Students">
+    <div class="section-header">
+      <h2>👨‍🎓 My Students</h2>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <div class="table-controls">
+          <input type="search" class="search-input" id="mystudent-search" placeholder="🔍 Search students…" oninput="renderMyStudents()" />
+        </div>
+        <div id="my-students-table"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== TIMETABLE ========== -->
+  <section class="section" id="sec-timetable" aria-label="My Timetable">
+    <div class="section-header"><h2>🗓 My Timetable</h2></div>
+    <div class="card">
+      <div class="card-body" id="staff-timetable"></div>
+    </div>
+  </section>
+
+</main>
+
+<script src="js/data.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/ui.js"></script>
+<script>
+'use strict';
+const SESSION = Auth.requireRole('staff');
+if (!SESSION) throw new Error('Unauthorized');
+
+seedData();
+UI.buildTopbar(SESSION);
+
+const MY_STAFF = DB.getOne(DB.KEYS.staff, SESSION.profileId);
+
+const NAV = [
+  { id: 'dashboard',  icon: '🏠', label: 'Dashboard'  },
+  { id: 'attendance', icon: '📋', label: 'Mark Attendance' },
+  { id: 'marks',      icon: '📝', label: 'Internal Marks'  },
+  { id: 'students',   icon: '👨‍🎓', label: 'My Students' },
+  { id: 'timetable',  icon: '🗓', label: 'My Timetable' },
+];
+UI.buildSidebar(NAV, 'dashboard');
+UI.initMobileSidebar();
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+function renderStaffDashboard() {
+  if (!MY_STAFF) { document.getElementById('staff-greeting').textContent = 'Profile not found.'; return; }
+
+  const subjects = DB.get(DB.KEYS.subjects).filter(s => MY_STAFF.subjects.includes(s.id));
+  const depts    = DB.get(DB.KEYS.departments);
+  const dept     = depts.find(d => d.id === MY_STAFF.deptId);
+  const students = DB.get(DB.KEYS.students).filter(s => s.deptId === MY_STAFF.deptId);
+  const timetable = DB.get(DB.KEYS.timetable);
+  const today   = new Date().toLocaleDateString('en-US',{weekday:'long'});
+  const todayTT = timetable.filter(t => t.staffId === MY_STAFF.id && t.day === today);
+
+  document.getElementById('staff-greeting').textContent =
+    `${MY_STAFF.designation}, ${dept?.name || ''} Department`;
+
+  document.getElementById('staff-stats').innerHTML =
+    UI.statCard('My Subjects',  subjects.length, '📚') +
+    UI.statCard('My Students',  students.length, '👨‍🎓') +
+    UI.statCard("Today's Classes", todayTT.length, '🏫') +
+    UI.statCard('Department',   dept?.code||'—', '🏛️');
+
+  // Today's classes
+  const subjectsMap = Object.fromEntries(DB.get(DB.KEYS.subjects).map(s=>[s.id,s]));
+  document.getElementById('today-classes').innerHTML = todayTT.length
+    ? todayTT.sort((a,b)=>a.period-b.period).map(t => `
+      <div style="display:flex;align-items:center;gap:.75rem;padding:.625rem 0;border-bottom:1px solid var(--border);">
+        <div style="width:36px;height:36px;background:var(--accent-light);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--accent);font-size:.85rem;flex-shrink:0;">P${t.period}</div>
+        <div>
+          <div style="font-weight:600;font-size:.88rem;">${subjectsMap[t.subjectId]?.name||'—'}</div>
+          <div style="font-size:.75rem;color:var(--text-2);">🕐 ${t.time} &nbsp;|&nbsp; 🚪 ${t.room}</div>
+        </div>
+      </div>`).join('')
+    : '<div class="empty-state"><p>No classes today.</p></div>';
+
+  // Announcements
+  const anns = DB.get(DB.KEYS.announcements).filter(a => a.targetRoles.includes('staff')).slice(0,3);
+  document.getElementById('staff-announcements').innerHTML = anns.length
+    ? anns.map(a => `<div class="announcement-card">
+        <h4>${a.title}</h4>
+        <p>${a.body.slice(0,100)}…</p>
+        <div class="announcement-meta">📅 ${a.date}</div>
+      </div>`).join('')
+    : '<div class="empty-state"><p>No announcements.</p></div>';
+}
+
+// ============================================================
+// ATTENDANCE
+// ============================================================
+function initAttendanceForm() {
+  const today = new Date().toISOString().slice(0,10);
+  document.getElementById('att-date').value = today;
+  document.getElementById('att-date').max   = today;
+
+  const subjects = DB.get(DB.KEYS.subjects).filter(s => MY_STAFF?.subjects.includes(s.id));
+  const sel = document.getElementById('att-subject');
+  sel.innerHTML = '<option value="">Select subject…</option>' +
+    subjects.map(s => `<option value="${s.id}">${s.code} — ${s.name}</option>`).join('');
+}
+
+function loadAttendanceSheet() {
+  const subjectId = parseInt(document.getElementById('att-subject').value);
+  const date      = document.getElementById('att-date').value;
+  if (!subjectId || !date) { UI.toast('Select subject and date.', 'warning'); return; }
+
+  const subject  = DB.getOne(DB.KEYS.subjects, subjectId);
+  const students = DB.get(DB.KEYS.students).filter(s => s.deptId === subject.deptId);
+  const existing = DB.get(DB.KEYS.attendance).filter(a => a.subjectId === subjectId && a.date === date);
+
+  document.getElementById('att-sheet-title').textContent =
+    `${subject.name} — ${date} (${students.length} students)`;
+
+  document.getElementById('att-sheet').innerHTML = `
+    <div id="att-rows">
+    ${students.map(st => {
+      const rec = existing.find(a => a.studentId === st.id);
+      const status = rec?.status || 'present';
+      return `
+        <div class="att-row" id="row-${st.id}">
+          <div>
+            <span style="font-weight:600;font-size:.88rem;">${st.name}</span>
+            <span style="font-size:.75rem;color:var(--text-2);margin-left:.5rem;">${st.rollNo}</span>
+          </div>
+          <div class="att-toggle-pair" role="group" aria-label="Attendance for ${st.name}">
+            <button type="button" class="att-btn present ${status==='present'?'active':''}"
+              onclick="setAtt(${st.id},'present')" aria-pressed="${status==='present'}">✅ P</button>
+            <button type="button" class="att-btn absent ${status==='absent'?'active':''}"
+              onclick="setAtt(${st.id},'absent')" aria-pressed="${status==='absent'}">❌ A</button>
+          </div>
+        </div>`;
+    }).join('')}
+    </div>`;
+
+  document.getElementById('att-sheet-card').style.display = '';
+}
+
+function setAtt(studentId, status) {
+  const row = document.getElementById('row-' + studentId);
+  row.querySelectorAll('.att-btn').forEach(btn => {
+    const isActive = btn.classList.contains(status);
+    btn.classList.toggle('active', isActive);
+    btn.setAttribute('aria-pressed', isActive);
+  });
+}
+
+function markAll(status) {
+  const students = DB.get(DB.KEYS.students).filter(s => {
+    const subjectId = parseInt(document.getElementById('att-subject').value);
+    const subject   = DB.getOne(DB.KEYS.subjects, subjectId);
+    return s.deptId === subject?.deptId;
+  });
+  students.forEach(st => setAtt(st.id, status));
+}
+
+function saveAttendance() {
+  const subjectId = parseInt(document.getElementById('att-subject').value);
+  const date      = document.getElementById('att-date').value;
+  const subject   = DB.getOne(DB.KEYS.subjects, subjectId);
+  const students  = DB.get(DB.KEYS.students).filter(s => s.deptId === subject.deptId);
+
+  let attendance = DB.get(DB.KEYS.attendance).filter(a => !(a.subjectId === subjectId && a.date === date));
+  let nextId     = DB.get(DB.KEYS.attendance).reduce((m, a) => Math.max(m, a.id || 0), 0);
+
+  students.forEach(st => {
+    const row    = document.getElementById('row-' + st.id);
+    const status = row?.querySelector('.att-btn.present.active') ? 'present' : 'absent';
+    attendance.push({ id: ++nextId, date, subjectId, studentId: st.id, status, markedBy: MY_STAFF.id });
+  });
+
+  DB.set(DB.KEYS.attendance, attendance);
+  UI.toast(`Attendance saved for ${students.length} students!`, 'success');
+}
+
+// ============================================================
+// MARKS
+// ============================================================
+function initMarksForm() {
+  const subjects = DB.get(DB.KEYS.subjects).filter(s => MY_STAFF?.subjects.includes(s.id));
+  const sel = document.getElementById('marks-subject');
+  sel.innerHTML = '<option value="">Select subject…</option>' +
+    subjects.map(s => `<option value="${s.id}">${s.code} — ${s.name}</option>`).join('');
+}
+
+function loadMarksSheet() {
+  const subjectId = parseInt(document.getElementById('marks-subject').value);
+  if (!subjectId) { UI.toast('Select a subject.', 'warning'); return; }
+
+  const subject  = DB.getOne(DB.KEYS.subjects, subjectId);
+  const students = DB.get(DB.KEYS.students).filter(s => s.deptId === subject.deptId);
+  const marks    = DB.get(DB.KEYS.marks).filter(m => m.subjectId === subjectId);
+
+  document.getElementById('marks-sheet-title').textContent = subject.name + ' — Marks Entry';
+
+  const rows = students.map(st => {
+    const m = marks.find(x => x.studentId === st.id) || {};
+    return `<tr>
+      <td data-label="Roll No">${st.rollNo}</td>
+      <td data-label="Name"><strong>${st.name}</strong></td>
+      <td data-label="Internal 1 (/30)">
+        <input class="marks-input" type="number" min="0" max="30"
+          id="m-i1-${st.id}" value="${m.internal1||0}" aria-label="Internal 1 for ${st.name}" />
+      </td>
+      <td data-label="Internal 2 (/30)">
+        <input class="marks-input" type="number" min="0" max="30"
+          id="m-i2-${st.id}" value="${m.internal2||0}" aria-label="Internal 2 for ${st.name}" />
+      </td>
+      <td data-label="Assignment (/15)">
+        <input class="marks-input" type="number" min="0" max="15"
+          id="m-as-${st.id}" value="${m.assignment||0}" aria-label="Assignment for ${st.name}" />
+      </td>
+      <td data-label="Total (/75)" id="m-tot-${st.id}">
+        <strong>${(m.total||0)}</strong>
+      </td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('marks-sheet').innerHTML = `
+    <p class="text-muted" style="font-size:.82rem;margin-bottom:.75rem;">
+      Max: Internal 1 = 30, Internal 2 = 30, Assignment = 15, Total = 75
+    </p>
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead><tr>
+          <th>Roll No</th><th>Name</th>
+          <th>Internal 1<br/><small>(/30)</small></th>
+          <th>Internal 2<br/><small>(/30)</small></th>
+          <th>Assignment<br/><small>(/15)</small></th>
+          <th>Total<br/><small>(/75)</small></th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+
+  document.getElementById('marks-sheet-card').style.display = '';
+
+  // Live total update
+  students.forEach(st => {
+    ['i1','i2','as'].forEach(k => {
+      const inp = document.getElementById(`m-${k}-${st.id}`);
+      if (inp) inp.addEventListener('input', () => updateTotal(st.id));
+    });
+  });
+}
+
+function updateTotal(studentId) {
+  const i1 = parseFloat(document.getElementById(`m-i1-${studentId}`)?.value)||0;
+  const i2 = parseFloat(document.getElementById(`m-i2-${studentId}`)?.value)||0;
+  const as = parseFloat(document.getElementById(`m-as-${studentId}`)?.value)||0;
+  const totEl = document.getElementById(`m-tot-${studentId}`);
+  if (totEl) totEl.innerHTML = `<strong>${i1+i2+as}</strong>`;
+}
+
+function saveMarks() {
+  const subjectId = parseInt(document.getElementById('marks-subject').value);
+  const subject   = DB.getOne(DB.KEYS.subjects, subjectId);
+  const students  = DB.get(DB.KEYS.students).filter(s => s.deptId === subject.deptId);
+  let marks = DB.get(DB.KEYS.marks).filter(m => m.subjectId !== subjectId);
+  let nextId = DB.get(DB.KEYS.marks).reduce((m,x) => Math.max(m, x.id||0), 0);
+
+  students.forEach(st => {
+    const i1 = Math.min(30, Math.max(0, parseFloat(document.getElementById(`m-i1-${st.id}`)?.value)||0));
+    const i2 = Math.min(30, Math.max(0, parseFloat(document.getElementById(`m-i2-${st.id}`)?.value)||0));
+    const as = Math.min(15, Math.max(0, parseFloat(document.getElementById(`m-as-${st.id}`)?.value)||0));
+    marks.push({ id: ++nextId, studentId: st.id, subjectId, internal1: i1, internal2: i2, assignment: as, total: i1+i2+as, maxInternal1:30, maxInternal2:30, maxAssignment:15, maxTotal:75 });
+  });
+  DB.set(DB.KEYS.marks, marks);
+  UI.toast('Marks saved successfully!', 'success');
+}
+
+// ============================================================
+// MY STUDENTS
+// ============================================================
+function renderMyStudents() {
+  if (!MY_STAFF) return;
+  const students = DB.get(DB.KEYS.students).filter(s => s.deptId === MY_STAFF.deptId);
+  const depts    = DB.get(DB.KEYS.departments);
+  const q        = document.getElementById('mystudent-search').value.toLowerCase();
+  const rows     = students.filter(s => [s.name, s.rollNo].join(' ').toLowerCase().includes(q));
+
+  UI.renderTable('my-students-table',
+    [
+      { key: 'rollNo', label: 'Roll No',  sort: true },
+      { key: 'name',   label: 'Name',     sort: true },
+      { key: 'year',   label: 'Year',     render: r => 'Year '+r.year },
+      { key: 'phone',  label: 'Phone' },
+      { key: 'email',  label: 'Email' },
+    ],
+    rows,
+    null
+  );
+}
+
+// ============================================================
+// TIMETABLE
+// ============================================================
+function renderStaffTimetable() {
+  if (!MY_STAFF) return;
+  const timetable = DB.get(DB.KEYS.timetable).filter(t => t.staffId === MY_STAFF.id);
+  const subjects  = DB.get(DB.KEYS.subjects);
+  const days      = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
+  const periods   = [1,2,3,4,5];
+  const times     = { 1:'09:00-10:00', 2:'10:00-11:00', 3:'11:15-12:15', 4:'13:00-14:00', 5:'14:00-15:00' };
+  const todayName = new Date().toLocaleDateString('en-US',{weekday:'long'});
+
+  let grid = `<div class="timetable-grid" role="grid" aria-label="Weekly timetable">
+    <div class="tt-header" role="columnheader">Time</div>
+    ${days.map(d=>`<div class="tt-header ${d===todayName?'today-highlight':''}" role="columnheader">${d}</div>`).join('')}`;
+
+  periods.forEach(p => {
+    grid += `<div class="tt-time">${times[p]}</div>`;
+    days.forEach(day => {
+      const slot = timetable.find(t => t.day === day && t.period === p);
+      if (slot) {
+        const sub = subjects.find(s => s.id === slot.subjectId);
+        grid += `<div class="tt-cell tt-filled ${day===todayName?'today-highlight':''}">
+          <div class="tt-subject">${sub?.code||'?'}</div>
+          <div class="tt-staff">${sub?.name||''}</div>
+          <div class="tt-room">🚪 ${slot.room}</div>
+        </div>`;
+      } else {
+        grid += `<div class="tt-cell tt-empty"></div>`;
+      }
+    });
+  });
+  grid += '</div>';
+  document.getElementById('staff-timetable').innerHTML = grid;
+}
+
+// Init
+renderStaffDashboard();
+initAttendanceForm();
+initMarksForm();
+renderMyStudents();
+renderStaffTimetable();
+</script>
+</body>
+</html>
