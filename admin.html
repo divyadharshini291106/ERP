@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="en" class="role-admin">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Portal — MIT College ERP</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+</head>
+<body class="portal-layout role-admin">
+
+<!-- Sidebar Overlay (mobile) -->
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+<!-- Sidebar -->
+<aside class="sidebar" id="sidebar" role="navigation" aria-label="Admin navigation">
+  <div class="sidebar-header">
+    <div class="sidebar-logo" aria-hidden="true">🏛️</div>
+    <div>
+      <div class="sidebar-title">MIT ERP</div>
+      <div class="sidebar-subtitle">Admin Portal</div>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <ul id="sidebar-nav"></ul>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="sidebar-user">
+      <div class="user-avatar" id="user-avatar" aria-hidden="true">A</div>
+      <div class="user-info-text">
+        <div class="uname" id="user-name">Admin</div>
+        <div class="urole" id="user-role">Admin</div>
+      </div>
+    </div>
+    <button class="btn-logout" onclick="Auth.logout()" aria-label="Logout">
+      🚪 Logout
+    </button>
+  </div>
+</aside>
+
+<!-- Topbar -->
+<header class="topbar" role="banner">
+  <div class="topbar-left">
+    <button id="sidebar-toggle" aria-label="Toggle sidebar" aria-expanded="false">☰</button>
+    <span class="page-title" id="page-title">Dashboard</span>
+  </div>
+  <div class="topbar-right">
+    <div class="topbar-user">
+      <div class="topbar-name" id="topbar-name">Administrator</div>
+      <span class="topbar-role">Admin</span>
+    </div>
+    <div class="topbar-avatar" aria-hidden="true">A</div>
+  </div>
+</header>
+
+<!-- Main Content -->
+<main class="main-content" id="main-content" role="main">
+
+  <!-- ============ DASHBOARD ============ -->
+  <section class="section active" id="sec-dashboard" aria-label="Dashboard">
+    <div class="page-header">
+      <h2>Dashboard</h2>
+      <p class="text-muted">Welcome back, Administrator! Here's today's overview.</p>
+    </div>
+    <div class="stats-grid" id="admin-stats"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;" class="dash-grid">
+      <div class="card">
+        <div class="card-header"><h3>📊 Department-wise Students</h3></div>
+        <div class="card-body">
+          <div class="chart-bars" id="dept-chart"></div>
+          <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.75rem;" id="dept-chart-labels"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>📢 Recent Announcements</h3><a href="#" class="btn btn-sm btn-outline" onclick="switchSection('announcements')">View All</a></div>
+        <div class="card-body" id="dash-announcements"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ STUDENTS ============ -->
+  <section class="section" id="sec-students" aria-label="Manage Students">
+    <div class="section-header">
+      <h2>👨‍🎓 Manage Students</h2>
+      <button class="btn btn-primary" onclick="openStudentModal()">+ Add Student</button>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <div class="table-controls">
+          <input type="search" class="search-input" id="student-search" placeholder="🔍 Search students…" oninput="renderStudentsTable()" aria-label="Search students" />
+          <select class="form-control" id="student-dept-filter" onchange="renderStudentsTable()" style="max-width:200px;" aria-label="Filter by department">
+            <option value="">All Departments</option>
+          </select>
+          <select class="form-control" id="student-year-filter" onchange="renderStudentsTable()" style="max-width:120px;" aria-label="Filter by year">
+            <option value="">All Years</option>
+            <option value="1">Year 1</option>
+            <option value="2">Year 2</option>
+            <option value="3">Year 3</option>
+            <option value="4">Year 4</option>
+          </select>
+        </div>
+        <div id="students-table"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ STAFF ============ -->
+  <section class="section" id="sec-staff" aria-label="Manage Staff">
+    <div class="section-header">
+      <h2>👨‍🏫 Manage Staff</h2>
+      <button class="btn btn-primary" onclick="openStaffModal()">+ Add Staff</button>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <div class="table-controls">
+          <input type="search" class="search-input" id="staff-search" placeholder="🔍 Search staff…" oninput="renderStaffTable()" aria-label="Search staff" />
+          <select class="form-control" id="staff-dept-filter" onchange="renderStaffTable()" style="max-width:200px;" aria-label="Filter by department">
+            <option value="">All Departments</option>
+          </select>
+        </div>
+        <div id="staff-table"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ DEPARTMENTS ============ -->
+  <section class="section" id="sec-departments" aria-label="Departments and Courses">
+    <div class="section-header">
+      <h2>🏫 Departments & Courses</h2>
+      <div class="gap-row">
+        <button class="btn btn-primary" onclick="openDeptModal()">+ Add Department</button>
+        <button class="btn btn-outline" onclick="openCourseModal()">+ Add Course</button>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+      <div class="card">
+        <div class="card-header"><h3>Departments</h3></div>
+        <div class="card-body" id="dept-list"></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>Courses</h3></div>
+        <div class="card-body" id="course-list"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FEES ============ -->
+  <section class="section" id="sec-fees" aria-label="Fee Management">
+    <div class="section-header">
+      <h2>💰 Fee Management</h2>
+    </div>
+    <div class="stats-grid" id="fee-stats"></div>
+    <div class="card">
+      <div class="card-body">
+        <div class="table-controls">
+          <input type="search" class="search-input" id="fee-search" placeholder="🔍 Search student…" oninput="renderFeesTable()" aria-label="Search fees" />
+          <select class="form-control" id="fee-status-filter" onchange="renderFeesTable()" style="max-width:160px;" aria-label="Filter by fee status">
+            <option value="">All Status</option>
+            <option value="paid">Paid</option>
+            <option value="partial">Partial</option>
+            <option value="pending">Pending</option>
+          </select>
+        </div>
+        <div id="fees-table"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ANNOUNCEMENTS ============ -->
+  <section class="section" id="sec-announcements" aria-label="Announcements">
+    <div class="section-header">
+      <h2>📢 Announcements</h2>
+      <button class="btn btn-primary" onclick="openAnnouncementModal()">+ New Announcement</button>
+    </div>
+    <div id="announcements-list"></div>
+  </section>
+
+</main>
+
+<script src="js/data.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/ui.js"></script>
+<script>
+'use strict';
+// Route guard
+const SESSION = Auth.requireRole('admin');
+if (!SESSION) throw new Error('Unauthorized');
+
+seedData();
+UI.buildTopbar(SESSION);
+
+// ---- Sidebar ----
+const NAV = [
+  { id: 'dashboard',     icon: '🏠', label: 'Dashboard' },
+  { id: 'students',      icon: '👨‍🎓', label: 'Students' },
+  { id: 'staff',         icon: '👨‍🏫', label: 'Staff' },
+  { id: 'departments',   icon: '🏫', label: 'Departments & Courses' },
+  { id: 'fees',          icon: '💰', label: 'Fee Management' },
+  { id: 'announcements', icon: '📢', label: 'Announcements' },
+];
+UI.buildSidebar(NAV, 'dashboard');
+UI.initMobileSidebar();
+
+// Update page title on nav click
+document.querySelectorAll('.nav-link').forEach(link => {
+  link.addEventListener('click', () => {
+    const lbl = link.querySelector('span:last-child').textContent;
+    document.getElementById('page-title').textContent = lbl;
+    document.getElementById('topbar-name').textContent = SESSION.username;
+  });
+});
+
+function switchSection(id) {
+  document.querySelectorAll('.nav-link').forEach(l => {
+    const active = l.dataset.section === id;
+    l.classList.toggle('active', active);
+    l.setAttribute('aria-current', active ? 'page' : 'false');
+  });
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  const sec = document.getElementById('sec-' + id);
+  if (sec) sec.classList.add('active');
+}
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+function renderDashboard() {
+  const students = DB.get(DB.KEYS.students);
+  const staff    = DB.get(DB.KEYS.staff);
+  const depts    = DB.get(DB.KEYS.departments);
+  const fees     = DB.get(DB.KEYS.fees);
+  const att      = DB.get(DB.KEYS.attendance);
+
+  // Today attendance %
+  const today = new Date().toISOString().slice(0,10);
+  const todayAtt = att.filter(a => a.date === today);
+  const attPct = todayAtt.length ? Math.round(todayAtt.filter(a => a.status === 'present').length / todayAtt.length * 100) : 0;
+
+  const totalFees = fees.reduce((s, f) => s + f.amount, 0);
+  const paidFees  = fees.reduce((s, f) => s + f.paid, 0);
+
+  document.getElementById('admin-stats').innerHTML =
+    UI.statCard('Total Students', students.length, '👨‍🎓') +
+    UI.statCard('Total Staff',    staff.length,    '👨‍🏫') +
+    UI.statCard('Departments',    depts.length,    '🏫') +
+    UI.statCard("Today's Attendance", (todayAtt.length ? attPct + '%' : 'N/A'), '📋',
+      todayAtt.length ? (attPct >= 75 ? '✅ Good' : '⚠ Low') : 'No classes today') +
+    UI.statCard('Fee Collection', '₹' + (paidFees/100000).toFixed(1) + 'L', '💰',
+      Math.round(paidFees/totalFees*100) + '% collected');
+
+  // Department chart
+  const chartBars = document.getElementById('dept-chart');
+  const chartMax  = Math.max(...depts.map(d => students.filter(s => s.deptId === d.id).length)) || 1;
+  chartBars.innerHTML = depts.map(d => {
+    const count = students.filter(s => s.deptId === d.id).length;
+    const pct   = Math.round(count / chartMax * 100);
+    return `<div class="chart-bar-wrap">
+      <span class="chart-val">${count}</span>
+      <div class="chart-bar" style="height:${Math.max(pct,4)}%;background:var(--accent)" title="${d.name}: ${count} students"></div>
+      <span class="chart-bar-label">${d.code}</span>
+    </div>`;
+  }).join('');
+
+  // Announcements
+  const anns = DB.get(DB.KEYS.announcements).slice(0, 3);
+  document.getElementById('dash-announcements').innerHTML = anns.length
+    ? anns.map(a => `<div class="announcement-card">
+        <h4>${a.title}</h4>
+        <p>${a.body.slice(0,120)}…</p>
+        <div class="announcement-meta">📅 ${a.date} · By ${a.author}</div>
+      </div>`).join('')
+    : '<div class="empty-state"><p>No announcements yet.</p></div>';
+}
+
+// ============================================================
+// STUDENTS
+// ============================================================
+function initStudentFilters() {
+  const depts = DB.get(DB.KEYS.departments);
+  const sel   = document.getElementById('student-dept-filter');
+  sel.innerHTML = '<option value="">All Departments</option>' +
+    depts.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+}
+
+function renderStudentsTable() {
+  const students = DB.get(DB.KEYS.students);
+  const depts    = DB.get(DB.KEYS.departments);
+  const courses  = DB.get(DB.KEYS.courses);
+  const q        = document.getElementById('student-search').value.toLowerCase();
+  const dFilter  = document.getElementById('student-dept-filter').value;
+  const yFilter  = document.getElementById('student-year-filter').value;
+
+  let rows = students.filter(s => {
+    const d = depts.find(d => d.id === s.deptId);
+    const text = [s.name, s.rollNo, s.email, d?.code||''].join(' ').toLowerCase();
+    return (!q || text.includes(q))
+      && (!dFilter || s.deptId == dFilter)
+      && (!yFilter || s.year == yFilter);
+  });
+
+  UI.renderTable('students-table',
+    [
+      { key: 'rollNo', label: 'Roll No', sort: true },
+      { key: 'name',   label: 'Name',    sort: true },
+      { key: 'dept',   label: 'Dept',    render: r => depts.find(d=>d.id===r.deptId)?.code || '—' },
+      { key: 'year',   label: 'Year',    sort: true, render: r => 'Year ' + r.year },
+      { key: 'phone',  label: 'Phone'  },
+      { key: 'gender', label: 'Gender' },
+    ],
+    rows,
+    row => `
+      <button class="btn btn-sm btn-outline" onclick="openStudentModal(${row.id})" aria-label="Edit ${row.name}">✏ Edit</button>
+      <button class="btn btn-sm btn-danger"  onclick="deleteStudent(${row.id})" aria-label="Delete ${row.name}">🗑</button>
+    `
+  );
+}
+
+function openStudentModal(id = null) {
+  const depts   = DB.get(DB.KEYS.departments);
+  const courses = DB.get(DB.KEYS.courses);
+  const student = id ? DB.getOne(DB.KEYS.students, id) : null;
+
+  const deptOptions  = depts.map(d => `<option value="${d.id}" ${student?.deptId===d.id?'selected':''}>${d.name}</option>`).join('');
+  const courseOptions= courses.map(c => `<option value="${c.id}" ${student?.courseId===c.id?'selected':''}>${c.name}</option>`).join('');
+
+  const body = `
+    <form id="student-form" novalidate>
+      <div class="row-2">
+        <div class="form-group"><label for="s-name">Full Name *</label>
+          <input id="s-name" class="form-control" value="${student?.name||''}" required placeholder="e.g. Arjun Sharma" /></div>
+        <div class="form-group"><label for="s-roll">Roll Number *</label>
+          <input id="s-roll" class="form-control" value="${student?.rollNo||''}" required placeholder="e.g. CSE2024001" /></div>
+      </div>
+      <div class="row-2">
+        <div class="form-group"><label for="s-dept">Department *</label>
+          <select id="s-dept" class="form-control" required><option value="">Select…</option>${deptOptions}</select></div>
+        <div class="form-group"><label for="s-course">Course *</label>
+          <select id="s-course" class="form-control" required><option value="">Select…</option>${courseOptions}</select></div>
+      </div>
+      <div class="row-2">
+        <div class="form-group"><label for="s-year">Year *</label>
+          <select id="s-year" class="form-control" required>
+            ${[1,2,3,4].map(y=>`<option value="${y}" ${student?.year==y?'selected':''}>${y}</option>`).join('')}
+          </select></div>
+        <div class="form-group"><label for="s-gender">Gender</label>
+          <select id="s-gender" class="form-control">
+            <option ${student?.gender==='Male'?'selected':''}>Male</option>
+            <option ${student?.gender==='Female'?'selected':''}>Female</option>
+            <option ${student?.gender==='Other'?'selected':''}>Other</option>
+          </select></div>
+      </div>
+      <div class="row-2">
+        <div class="form-group"><label for="s-phone">Phone</label>
+          <input id="s-phone" class="form-control" value="${student?.phone||''}" placeholder="10-digit number" /></div>
+        <div class="form-group"><label for="s-dob">Date of Birth</label>
+          <input id="s-dob" type="date" class="form-control" value="${student?.dob||''}" /></div>
+      </div>
+      <div class="form-group"><label for="s-email">Email</label>
+        <input id="s-email" type="email" class="form-control" value="${student?.email||''}" placeholder="student@mit.edu.in" /></div>
+      <div class="form-group"><label for="s-address">Address</label>
+        <textarea id="s-address" class="form-control" rows="2" placeholder="Full address">${student?.address||''}</textarea></div>
+      ${id ? '' : `<div class="divider"></div>
+      <p class="text-muted" style="font-size:.82rem;margin-bottom:.75rem;">🔑 Login credentials will be auto-generated</p>
+      <div class="row-2">
+        <div class="form-group"><label for="s-username">Username *</label>
+          <input id="s-username" class="form-control" required placeholder="e.g. student31" /></div>
+        <div class="form-group"><label for="s-password">Password *</label>
+          <input id="s-password" type="password" class="form-control" value="student123" required /></div>
+      </div>`}
+    </form>`;
+
+  UI.createModal('student-modal', id ? 'Edit Student' : 'Add New Student', body,
+    `<button class="btn btn-primary" onclick="saveStudent(${id||'null'})">
+       ${id ? '💾 Save Changes' : '➕ Add Student'}
+     </button>
+     <button class="btn btn-secondary" onclick="UI.closeModal('student-modal')">Cancel</button>`
+  );
+  UI.openModal('student-modal');
+}
+
+function saveStudent(id) {
+  const name    = document.getElementById('s-name').value.trim();
+  const rollNo  = document.getElementById('s-roll').value.trim();
+  const deptId  = parseInt(document.getElementById('s-dept').value);
+  const courseId= parseInt(document.getElementById('s-course').value);
+  const year    = parseInt(document.getElementById('s-year').value);
+  const gender  = document.getElementById('s-gender').value;
+  const phone   = document.getElementById('s-phone').value.trim();
+  const dob     = document.getElementById('s-dob').value;
+  const email   = document.getElementById('s-email').value.trim();
+  const address = document.getElementById('s-address').value.trim();
+
+  if (!name || !rollNo || !deptId || !courseId) { UI.toast('Please fill required fields.', 'error'); return; }
+
+  if (id) {
+    DB.update(DB.KEYS.students, id, {name,rollNo,deptId,courseId,year,gender,phone,dob,email,address});
+    UI.toast('Student updated successfully!', 'success');
+  } else {
+    const username = document.getElementById('s-username').value.trim();
+    const password = document.getElementById('s-password').value;
+    if (!username || !password) { UI.toast('Please provide login credentials.', 'error'); return; }
+    if (DB.get(DB.KEYS.users).find(u => u.username === username)) { UI.toast('Username already exists!', 'error'); return; }
+
+    const newStudent = DB.insert(DB.KEYS.students, { id: DB.nextId(DB.KEYS.students), name, rollNo, deptId, courseId, year, gender, phone, dob, email, address });
+    DB.insert(DB.KEYS.users, { id: DB.nextId(DB.KEYS.users), username, password, role: 'student', profileId: newStudent.id });
+    // Add fee record
+    const amount = deptId === 1 ? 85000 : deptId === 2 ? 80000 : 70000;
+    DB.insert(DB.KEYS.fees, { id: newStudent.id, studentId: newStudent.id, amount, paid: 0, dueDate: '2024-12-31', history: [] });
+    UI.toast('Student added successfully!', 'success');
+  }
+  UI.closeModal('student-modal');
+  renderStudentsTable();
+  renderDashboard();
+}
+
+function deleteStudent(id) {
+  const student = DB.getOne(DB.KEYS.students, id);
+  UI.confirm(`Delete student <strong>${student?.name}</strong>? This action cannot be undone.`, function () {
+    DB.remove(DB.KEYS.students, id);
+    // Remove user account
+    const users = DB.get(DB.KEYS.users).filter(u => !(u.role==='student' && u.profileId===id));
+    DB.set(DB.KEYS.users, users);
+    DB.remove(DB.KEYS.fees, id);
+    UI.toast('Student deleted.', 'success');
+    renderStudentsTable();
+    renderDashboard();
+  });
+}
+
+// ============================================================
+// STAFF
+// ============================================================
+function initStaffFilters() {
+  const depts = DB.get(DB.KEYS.departments);
+  ['staff-dept-filter'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (sel) sel.innerHTML = '<option value="">All Departments</option>' +
+      depts.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+  });
+}
+
+function renderStaffTable() {
+  const staff    = DB.get(DB.KEYS.staff);
+  const depts    = DB.get(DB.KEYS.departments);
+  const subjects = DB.get(DB.KEYS.subjects);
+  const q        = document.getElementById('staff-search').value.toLowerCase();
+  const dFilter  = document.getElementById('staff-dept-filter').value;
+
+  let rows = staff.filter(s => {
+    const d = depts.find(d => d.id === s.deptId);
+    const text = [s.name, s.empId, s.email, d?.code||''].join(' ').toLowerCase();
+    return (!q || text.includes(q)) && (!dFilter || s.deptId == dFilter);
+  });
+
+  UI.renderTable('staff-table',
+    [
+      { key: 'empId',       label: 'Emp ID',      sort: true },
+      { key: 'name',        label: 'Name',         sort: true },
+      { key: 'designation', label: 'Designation' },
+      { key: 'dept',        label: 'Department',   render: r => depts.find(d=>d.id===r.deptId)?.code || '—' },
+      { key: 'subjects',    label: 'Subjects',     render: r => r.subjects.map(sid => subjects.find(s=>s.id===sid)?.code||'?').join(', ') },
+      { key: 'phone',       label: 'Phone'        },
+    ],
+    rows,
+    row => `
+      <button class="btn btn-sm btn-outline" onclick="openStaffModal(${row.id})" aria-label="Edit ${row.name}">✏ Edit</button>
+      <button class="btn btn-sm btn-danger"  onclick="deleteStaff(${row.id})" aria-label="Delete ${row.name}">🗑</button>
+    `
+  );
+}
+
+function openStaffModal(id = null) {
+  const depts    = DB.get(DB.KEYS.departments);
+  const subjects = DB.get(DB.KEYS.subjects);
+  const member   = id ? DB.getOne(DB.KEYS.staff, id) : null;
+
+  const deptOpts  = depts.map(d => `<option value="${d.id}" ${member?.deptId===d.id?'selected':''}>${d.name}</option>`).join('');
+  const subjChecks= subjects.map(s => `
+    <label style="display:flex;align-items:center;gap:.4rem;font-size:.85rem;cursor:pointer;padding:.2rem 0;">
+      <input type="checkbox" value="${s.id}" ${(member?.subjects||[]).includes(s.id)?'checked':''} class="subj-check" />
+      ${s.code} — ${s.name}
+    </label>`).join('');
+
+  const body = `
+    <form id="staff-form" novalidate>
+      <div class="row-2">
+        <div class="form-group"><label for="st-name">Full Name *</label>
+          <input id="st-name" class="form-control" value="${member?.name||''}" required placeholder="e.g. Dr. Rajesh Kumar" /></div>
+        <div class="form-group"><label for="st-empid">Employee ID *</label>
+          <input id="st-empid" class="form-control" value="${member?.empId||''}" required placeholder="e.g. EMP009" /></div>
+      </div>
+      <div class="row-2">
+        <div class="form-group"><label for="st-desig">Designation *</label>
+          <select id="st-desig" class="form-control" required>
+            ${['Professor','Associate Professor','Assistant Professor','Lecturer'].map(d=>`<option ${member?.designation===d?'selected':''}>${d}</option>`).join('')}
+          </select></div>
+        <div class="form-group"><label for="st-dept">Department *</label>
+          <select id="st-dept" class="form-control" required><option value="">Select…</option>${deptOpts}</select></div>
+      </div>
+      <div class="row-2">
+        <div class="form-group"><label for="st-phone">Phone</label>
+          <input id="st-phone" class="form-control" value="${member?.phone||''}" placeholder="10-digit" /></div>
+        <div class="form-group"><label for="st-email">Email</label>
+          <input id="st-email" type="email" class="form-control" value="${member?.email||''}" placeholder="name@mit.edu.in" /></div>
+      </div>
+      <div class="form-group"><label>Subjects</label>
+        <div style="max-height:160px;overflow-y:auto;border:1.5px solid var(--border);border-radius:8px;padding:.625rem 1rem;">${subjChecks}</div>
+      </div>
+      ${id ? '' : `<div class="divider"></div>
+      <div class="row-2">
+        <div class="form-group"><label for="st-username">Username *</label>
+          <input id="st-username" class="form-control" required placeholder="e.g. staff9" /></div>
+        <div class="form-group"><label for="st-password">Password *</label>
+          <input id="st-password" type="password" class="form-control" value="staff123" required /></div>
+      </div>`}
+    </form>`;
+
+  UI.createModal('staff-modal', id ? 'Edit Staff Member' : 'Add New Staff', body,
+    `<button class="btn btn-primary" onclick="saveStaff(${id||'null'})">
+       ${id ? '💾 Save Changes' : '➕ Add Staff'}
+     </button>
+     <button class="btn btn-secondary" onclick="UI.closeModal('staff-modal')">Cancel</button>`
+  );
+  UI.openModal('staff-modal');
+}
+
+function saveStaff(id) {
+  const name    = document.getElementById('st-name').value.trim();
+  const empId   = document.getElementById('st-empid').value.trim();
+  const desig   = document.getElementById('st-desig').value;
+  const deptId  = parseInt(document.getElementById('st-dept').value);
+  const phone   = document.getElementById('st-phone').value.trim();
+  const email   = document.getElementById('st-email').value.trim();
+  const subjects= Array.from(document.querySelectorAll('.subj-check:checked')).map(c => parseInt(c.value));
+
+  if (!name || !empId || !deptId) { UI.toast('Please fill required fields.', 'error'); return; }
+
+  if (id) {
+    DB.update(DB.KEYS.staff, id, {name,empId,designation:desig,deptId,phone,email,subjects});
+    UI.toast('Staff updated successfully!', 'success');
+  } else {
+    const username = document.getElementById('st-username').value.trim();
+    const password = document.getElementById('st-password').value;
+    if (!username || !password) { UI.toast('Please provide login credentials.', 'error'); return; }
+    if (DB.get(DB.KEYS.users).find(u => u.username === username)) { UI.toast('Username already exists!', 'error'); return; }
+    const newStaff = DB.insert(DB.KEYS.staff, { id: DB.nextId(DB.KEYS.staff), name, empId, designation: desig, deptId, phone, email, subjects });
+    DB.insert(DB.KEYS.users, { id: DB.nextId(DB.KEYS.users), username, password, role: 'staff', profileId: newStaff.id });
+    UI.toast('Staff added successfully!', 'success');
+  }
+  UI.closeModal('staff-modal');
+  renderStaffTable();
+  renderDashboard();
+}
+
+function deleteStaff(id) {
+  const member = DB.getOne(DB.KEYS.staff, id);
+  UI.confirm(`Delete staff <strong>${member?.name}</strong>?`, function () {
+    DB.remove(DB.KEYS.staff, id);
+    const users = DB.get(DB.KEYS.users).filter(u => !(u.role==='staff' && u.profileId===id));
+    DB.set(DB.KEYS.users, users);
+    UI.toast('Staff deleted.', 'success');
+    renderStaffTable();
+    renderDashboard();
+  });
+}
+
+// ============================================================
+// DEPARTMENTS & COURSES
+// ============================================================
+function renderDeptList() {
+  const depts    = DB.get(DB.KEYS.departments);
+  const students = DB.get(DB.KEYS.students);
+  const staff    = DB.get(DB.KEYS.staff);
+  document.getElementById('dept-list').innerHTML = depts.map(d => `
+    <div class="announcement-card" style="margin-bottom:.75rem;">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <h4>${d.name} <span class="badge badge-info" style="margin-left:.5rem;">${d.code}</span></h4>
+          <p style="margin-top:.35rem;font-size:.82rem;color:var(--text-2);">
+            👨‍🎓 ${students.filter(s=>s.deptId===d.id).length} students &nbsp;|&nbsp;
+            👨‍🏫 ${staff.filter(s=>s.deptId===d.id).length} staff
+          </p>
+        </div>
+        <div>
+          <button class="btn btn-sm btn-outline" onclick="openDeptModal(${d.id})">✏</button>
+          <button class="btn btn-sm btn-danger"  onclick="deleteDept(${d.id})">🗑</button>
+        </div>
+      </div>
+    </div>`).join('') || '<div class="empty-state"><p>No departments.</p></div>';
+}
+
+function renderCourseList() {
+  const courses = DB.get(DB.KEYS.courses);
+  const depts   = DB.get(DB.KEYS.departments);
+  document.getElementById('course-list').innerHTML = courses.map(c => `
+    <div class="announcement-card" style="margin-bottom:.75rem;">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <h4>${c.name}</h4>
+          <p style="margin-top:.25rem;font-size:.82rem;color:var(--text-2);">
+            ${depts.find(d=>d.id===c.deptId)?.name||'—'} &nbsp;|&nbsp; ${c.duration} years
+          </p>
+        </div>
+        <div>
+          <button class="btn btn-sm btn-outline" onclick="openCourseModal(${c.id})">✏</button>
+          <button class="btn btn-sm btn-danger"  onclick="deleteCourse(${c.id})">🗑</button>
+        </div>
+      </div>
+    </div>`).join('') || '<div class="empty-state"><p>No courses.</p></div>';
+}
+
+function openDeptModal(id = null) {
+  const dept = id ? DB.getOne(DB.KEYS.departments, id) : null;
+  const body = `<form id="dept-form">
+    <div class="form-group"><label for="d-name">Department Name *</label>
+      <input id="d-name" class="form-control" value="${dept?.name||''}" required placeholder="e.g. Civil Engineering" /></div>
+    <div class="form-group"><label for="d-code">Code *</label>
+      <input id="d-code" class="form-control" value="${dept?.code||''}" required placeholder="e.g. CE" /></div>
+  </form>`;
+  UI.createModal('dept-modal', id ? 'Edit Department' : 'Add Department', body,
+    `<button class="btn btn-primary" onclick="saveDept(${id||'null'})">Save</button>
+     <button class="btn btn-secondary" onclick="UI.closeModal('dept-modal')">Cancel</button>`);
+  UI.openModal('dept-modal');
+}
+
+function saveDept(id) {
+  const name = document.getElementById('d-name').value.trim();
+  const code = document.getElementById('d-code').value.trim().toUpperCase();
+  if (!name || !code) { UI.toast('Fill all fields.', 'error'); return; }
+  if (id) DB.update(DB.KEYS.departments, id, {name,code});
+  else DB.insert(DB.KEYS.departments, {id: DB.nextId(DB.KEYS.departments), name, code});
+  UI.closeModal('dept-modal');
+  UI.toast('Department saved!', 'success');
+  renderDeptList(); initStudentFilters(); initStaffFilters();
+}
+function deleteDept(id) {
+  UI.confirm('Delete this department?', function () {
+    DB.remove(DB.KEYS.departments, id);
+    UI.toast('Deleted.', 'success');
+    renderDeptList();
+  });
+}
+
+function openCourseModal(id = null) {
+  const course = id ? DB.getOne(DB.KEYS.courses, id) : null;
+  const depts  = DB.get(DB.KEYS.departments);
+  const deptOpts = depts.map(d => `<option value="${d.id}" ${course?.deptId===d.id?'selected':''}>${d.name}</option>`).join('');
+  const body = `<form id="course-form">
+    <div class="form-group"><label for="c-name">Course Name *</label>
+      <input id="c-name" class="form-control" value="${course?.name||''}" required placeholder="e.g. B.Tech Civil Engineering" /></div>
+    <div class="form-group"><label for="c-dept">Department *</label>
+      <select id="c-dept" class="form-control" required><option value="">Select…</option>${deptOpts}</select></div>
+    <div class="form-group"><label for="c-dur">Duration (Years)</label>
+      <select id="c-dur" class="form-control">
+        ${[2,3,4,5].map(y=>`<option value="${y}" ${course?.duration==y?'selected':''}>${y} years</option>`).join('')}
+      </select></div>
+  </form>`;
+  UI.createModal('course-modal', id ? 'Edit Course' : 'Add Course', body,
+    `<button class="btn btn-primary" onclick="saveCourse(${id||'null'})">Save</button>
+     <button class="btn btn-secondary" onclick="UI.closeModal('course-modal')">Cancel</button>`);
+  UI.openModal('course-modal');
+}
+
+function saveCourse(id) {
+  const name   = document.getElementById('c-name').value.trim();
+  const deptId = parseInt(document.getElementById('c-dept').value);
+  const dur    = parseInt(document.getElementById('c-dur').value);
+  if (!name || !deptId) { UI.toast('Fill all fields.', 'error'); return; }
+  if (id) DB.update(DB.KEYS.courses, id, {name,deptId,duration:dur});
+  else DB.insert(DB.KEYS.courses, {id: DB.nextId(DB.KEYS.courses), name, deptId, duration:dur});
+  UI.closeModal('course-modal');
+  UI.toast('Course saved!', 'success');
+  renderCourseList();
+}
+function deleteCourse(id) {
+  UI.confirm('Delete this course?', function () {
+    DB.remove(DB.KEYS.courses, id);
+    UI.toast('Deleted.', 'success');
+    renderCourseList();
+  });
+}
+
+// ============================================================
+// FEES
+// ============================================================
+function renderFeeStats() {
+  const fees = DB.get(DB.KEYS.fees);
+  const total   = fees.reduce((s,f) => s+f.amount, 0);
+  const paid    = fees.reduce((s,f) => s+f.paid, 0);
+  const pending = total - paid;
+  const paidCount   = fees.filter(f => f.paid >= f.amount).length;
+  const pendingCount= fees.filter(f => f.paid < f.amount).length;
+
+  document.getElementById('fee-stats').innerHTML =
+    UI.statCard('Total Fee Collected',  '₹' + (paid/100000).toFixed(2)+'L',    '💸') +
+    UI.statCard('Total Pending',        '₹' + (pending/100000).toFixed(2)+'L', '⏳', pendingCount+' students pending') +
+    UI.statCard('Fully Paid Students',  paidCount,   '✅') +
+    UI.statCard('Pending Students',     pendingCount, '🔴');
+}
+
+function renderFeesTable() {
+  const fees     = DB.get(DB.KEYS.fees);
+  const students = DB.get(DB.KEYS.students);
+  const depts    = DB.get(DB.KEYS.departments);
+  const q        = document.getElementById('fee-search').value.toLowerCase();
+  const sf       = document.getElementById('fee-status-filter').value;
+
+  let rows = fees.map(f => {
+    const st = students.find(s => s.id === f.studentId);
+    if (!st) return null;
+    const pct    = Math.round(f.paid/f.amount*100);
+    const status = f.paid >= f.amount ? 'paid' : f.paid > 0 ? 'partial' : 'pending';
+    return {...f, studentName: st.name, rollNo: st.rollNo, deptCode: depts.find(d=>d.id===st.deptId)?.code||'', status, pct };
+  }).filter(Boolean).filter(r => {
+    const txt = [r.studentName, r.rollNo, r.deptCode].join(' ').toLowerCase();
+    return (!q || txt.includes(q)) && (!sf || r.status === sf);
+  });
+
+  UI.renderTable('fees-table',
+    [
+      { key: 'rollNo',      label: 'Roll No',  sort: true },
+      { key: 'studentName', label: 'Student',  sort: true },
+      { key: 'deptCode',    label: 'Dept' },
+      { key: 'amount',      label: 'Total Fee', render: r => '₹' + r.amount.toLocaleString('en-IN') },
+      { key: 'paid',        label: 'Paid',      render: r => '₹' + r.paid.toLocaleString('en-IN') },
+      { key: 'pct',         label: 'Status',    render: r => {
+          const cls = r.status === 'paid' ? 'badge-success' : r.status === 'partial' ? 'badge-warning' : 'badge-danger';
+          return `<span class="badge ${cls}">${r.status.toUpperCase()} (${r.pct}%)</span>`;
+        }
+      },
+      { key: 'dueDate', label: 'Due Date' },
+    ],
+    rows,
+    row => `<button class="btn btn-sm btn-outline" onclick="openFeeModal(${row.studentId})">💳 Payment</button>`
+  );
+}
+
+function openFeeModal(studentId) {
+  const fee     = DB.getOne(DB.KEYS.fees, studentId);
+  const student = DB.getOne(DB.KEYS.students, studentId);
+  const pending = fee.amount - fee.paid;
+  const hist    = fee.history.map(h => `
+    <tr>
+      <td>${h.date}</td><td>₹${h.amount.toLocaleString('en-IN')}</td>
+      <td>${h.mode}</td><td><code>${h.ref}</code></td>
+    </tr>`).join('');
+
+  const body = `
+    <div style="background:var(--bg);border-radius:8px;padding:.875rem 1rem;margin-bottom:1rem;">
+      <strong>${student.name}</strong> — ${student.rollNo}<br/>
+      <span class="text-muted" style="font-size:.85rem;">
+        Total: ₹${fee.amount.toLocaleString('en-IN')} &nbsp;|&nbsp;
+        Paid: <span class="text-success">₹${fee.paid.toLocaleString('en-IN')}</span> &nbsp;|&nbsp;
+        Pending: <span class="text-danger">₹${pending.toLocaleString('en-IN')}</span>
+      </span>
+    </div>
+    ${pending > 0 ? `
+    <div class="form-group"><label for="pay-amount">Payment Amount (₹) *</label>
+      <input id="pay-amount" type="number" class="form-control" value="${pending}" min="1" max="${pending}" /></div>
+    <div class="row-2">
+      <div class="form-group"><label for="pay-mode">Mode</label>
+        <select id="pay-mode" class="form-control">
+          <option>Online</option><option>DD</option><option>Cash</option><option>Cheque</option>
+        </select></div>
+      <div class="form-group"><label for="pay-ref">Reference No.</label>
+        <input id="pay-ref" class="form-control" placeholder="TXN / DD No." /></div>
+    </div>
+    <button class="btn btn-success btn-block" onclick="recordPayment(${studentId})" style="margin-bottom:1rem;">✅ Record Payment</button>
+    ` : '<div class="badge badge-success" style="margin-bottom:1rem;padding:.5rem 1rem;">✅ Fully Paid</div>'}
+    <h4 style="margin-bottom:.5rem;">Payment History</h4>
+    ${hist ? `<div class="table-wrapper"><table class="data-table"><thead><tr><th>Date</th><th>Amount</th><th>Mode</th><th>Ref</th></tr></thead><tbody>${hist}</tbody></table></div>` : '<p class="text-muted">No payments yet.</p>'}
+  `;
+  UI.createModal('fee-modal', 'Fee Payment — ' + student.name, body);
+  UI.openModal('fee-modal');
+}
+
+function recordPayment(studentId) {
+  const amount = parseFloat(document.getElementById('pay-amount').value);
+  const mode   = document.getElementById('pay-mode').value;
+  const ref    = document.getElementById('pay-ref').value.trim() || ('REF' + Date.now());
+  const fee    = DB.getOne(DB.KEYS.fees, studentId);
+  if (!amount || amount <= 0) { UI.toast('Enter valid amount.', 'error'); return; }
+  if (amount > fee.amount - fee.paid) { UI.toast('Amount exceeds pending.', 'error'); return; }
+  const newPaid = fee.paid + amount;
+  const history = [...fee.history, { date: new Date().toISOString().slice(0,10), amount, mode, ref }];
+  DB.update(DB.KEYS.fees, studentId, { paid: newPaid, history });
+  UI.closeModal('fee-modal');
+  UI.toast('Payment recorded!', 'success');
+  renderFeesTable();
+  renderFeeStats();
+}
+
+// ============================================================
+// ANNOUNCEMENTS
+// ============================================================
+function renderAnnouncementsList() {
+  const anns = DB.get(DB.KEYS.announcements);
+  document.getElementById('announcements-list').innerHTML = anns.length
+    ? anns.map(a => `
+      <div class="announcement-card">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:.5rem;">
+          <div style="flex:1;">
+            <h4>${a.title}</h4>
+            <p style="margin-top:.35rem;">${a.body}</p>
+            <div class="announcement-meta">
+              📅 ${a.date} &nbsp;|&nbsp; By ${a.author} &nbsp;|&nbsp;
+              Target: ${a.targetRoles.map(r => `<span class="tag">${r}</span>`).join(' ')}
+            </div>
+          </div>
+          <div style="flex-shrink:0;">
+            <button class="btn btn-sm btn-outline" onclick="openAnnouncementModal(${a.id})">✏</button>
+            <button class="btn btn-sm btn-danger"  onclick="deleteAnnouncement(${a.id})">🗑</button>
+          </div>
+        </div>
+      </div>`).join('')
+    : '<div class="empty-state"><p>No announcements yet.</p></div>';
+}
+
+function openAnnouncementModal(id = null) {
+  const ann  = id ? DB.get(DB.KEYS.announcements).find(a => a.id === id) : null;
+  const body = `<form id="ann-form">
+    <div class="form-group"><label for="ann-title">Title *</label>
+      <input id="ann-title" class="form-control" value="${ann?.title||''}" required placeholder="Announcement title" /></div>
+    <div class="form-group"><label for="ann-body">Message *</label>
+      <textarea id="ann-body" class="form-control" rows="4" required placeholder="Announcement details…">${ann?.body||''}</textarea></div>
+    <div class="form-group"><label>Visible To</label>
+      <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:.35rem;">
+        <label style="display:flex;align-items:center;gap:.4rem;cursor:pointer;">
+          <input type="checkbox" id="ann-staff" ${ann?.targetRoles?.includes('staff')||!ann?'checked':''} /> Staff
+        </label>
+        <label style="display:flex;align-items:center;gap:.4rem;cursor:pointer;">
+          <input type="checkbox" id="ann-student" ${ann?.targetRoles?.includes('student')||!ann?'checked':''} /> Students
+        </label>
+      </div>
+    </div>
+  </form>`;
+  UI.createModal('ann-modal', id ? 'Edit Announcement' : 'New Announcement', body,
+    `<button class="btn btn-primary" onclick="saveAnnouncement(${id||'null'})">
+       ${id ? '💾 Save' : '📢 Post Announcement'}
+     </button>
+     <button class="btn btn-secondary" onclick="UI.closeModal('ann-modal')">Cancel</button>`);
+  UI.openModal('ann-modal');
+}
+
+function saveAnnouncement(id) {
+  const title = document.getElementById('ann-title').value.trim();
+  const body  = document.getElementById('ann-body').value.trim();
+  const roles = [];
+  if (document.getElementById('ann-staff').checked)   roles.push('staff');
+  if (document.getElementById('ann-student').checked) roles.push('student');
+  if (!title || !body) { UI.toast('Fill all fields.', 'error'); return; }
+  const record = { title, body, date: new Date().toISOString().slice(0,10), authorId: 1, author: 'Admin Office', targetRoles: roles };
+  if (id) { DB.update(DB.KEYS.announcements, id, record); }
+  else    { DB.insert(DB.KEYS.announcements, { id: DB.nextId(DB.KEYS.announcements), ...record }); }
+  UI.closeModal('ann-modal');
+  UI.toast('Announcement saved!', 'success');
+  renderAnnouncementsList();
+  renderDashboard();
+}
+
+function deleteAnnouncement(id) {
+  UI.confirm('Delete this announcement?', function () {
+    DB.remove(DB.KEYS.announcements, id);
+    UI.toast('Deleted.', 'success');
+    renderAnnouncementsList();
+    renderDashboard();
+  });
+}
+
+// ============================================================
+// Init
+// ============================================================
+renderDashboard();
+initStudentFilters();
+renderStudentsTable();
+initStaffFilters();
+renderStaffTable();
+renderDeptList();
+renderCourseList();
+renderFeeStats();
+renderFeesTable();
+renderAnnouncementsList();
+</script>
+</body>
+</html>
