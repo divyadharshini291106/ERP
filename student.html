@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en" class="role-student">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student Portal — MIT College ERP</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+</head>
+<body class="portal-layout role-student">
+
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+<aside class="sidebar" id="sidebar" role="navigation" aria-label="Student navigation">
+  <div class="sidebar-header">
+    <div class="sidebar-logo" aria-hidden="true">🎓</div>
+    <div>
+      <div class="sidebar-title">MIT ERP</div>
+      <div class="sidebar-subtitle">Student Portal</div>
+    </div>
+  </div>
+  <nav class="sidebar-nav"><ul id="sidebar-nav"></ul></nav>
+  <div class="sidebar-footer">
+    <div class="sidebar-user">
+      <div class="user-avatar" style="background:var(--student-accent);" id="user-avatar" aria-hidden="true">S</div>
+      <div class="user-info-text">
+        <div class="uname" id="user-name">Student</div>
+        <div class="urole" id="user-role">Student</div>
+      </div>
+    </div>
+    <button class="btn-logout" onclick="Auth.logout()">🚪 Logout</button>
+  </div>
+</aside>
+
+<header class="topbar" role="banner">
+  <div class="topbar-left">
+    <button id="sidebar-toggle" aria-label="Toggle sidebar">☰</button>
+    <span class="page-title" id="page-title">Dashboard</span>
+  </div>
+  <div class="topbar-right">
+    <div class="topbar-user">
+      <div class="topbar-name" id="topbar-name">Student</div>
+      <span class="topbar-role" style="background:var(--student-accent);">Student</span>
+    </div>
+    <div class="topbar-avatar" style="background:var(--student-accent);" aria-hidden="true">S</div>
+  </div>
+</header>
+
+<main class="main-content" id="main-content" role="main">
+
+  <!-- ========== DASHBOARD ========== -->
+  <section class="section active" id="sec-dashboard" aria-label="Student Dashboard">
+    <div class="page-header">
+      <h2>Welcome back! 👋</h2>
+      <p class="text-muted" id="student-tagline">Loading your profile…</p>
+    </div>
+    <div class="stats-grid" id="student-stats"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;" class="dash-grid">
+      <div class="card">
+        <div class="card-header"><h3>📊 Attendance Overview</h3></div>
+        <div class="card-body" id="dash-att-overview"></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>📢 Announcements</h3></div>
+        <div class="card-body" id="student-announcements"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== PROFILE ========== -->
+  <section class="section" id="sec-profile" aria-label="My Profile">
+    <div class="section-header">
+      <h2>👤 My Profile</h2>
+      <button class="btn btn-outline" onclick="requestEdit()">✏ Request Edit</button>
+    </div>
+    <div class="card">
+      <div class="card-body" id="student-profile"></div>
+    </div>
+  </section>
+
+  <!-- ========== ATTENDANCE ========== -->
+  <section class="section" id="sec-attendance" aria-label="Attendance Report">
+    <div class="section-header"><h2>📋 Attendance Report</h2></div>
+    <div id="attendance-report"></div>
+  </section>
+
+  <!-- ========== MARKS ========== -->
+  <section class="section" id="sec-marks" aria-label="Marks / Report Card">
+    <div class="section-header"><h2>📝 Marks / Report Card</h2></div>
+    <div class="card">
+      <div class="card-body" id="marks-report"></div>
+    </div>
+  </section>
+
+  <!-- ========== FEES ========== -->
+  <section class="section" id="sec-fees" aria-label="Fee Status">
+    <div class="section-header"><h2>💰 Fee Status</h2></div>
+    <div class="stats-grid" id="fee-summary"></div>
+    <div class="card" style="margin-top:0;">
+      <div class="card-header"><h3>Payment History</h3></div>
+      <div class="card-body" id="fee-history"></div>
+    </div>
+  </section>
+
+  <!-- ========== TIMETABLE ========== -->
+  <section class="section" id="sec-timetable" aria-label="Timetable">
+    <div class="section-header"><h2>🗓 Weekly Timetable</h2></div>
+    <div class="card">
+      <div class="card-body" id="student-timetable"></div>
+    </div>
+  </section>
+
+</main>
+
+<script src="js/data.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/ui.js"></script>
+<script>
+'use strict';
+const SESSION = Auth.requireRole('student');
+if (!SESSION) throw new Error('Unauthorized');
+
+seedData();
+UI.buildTopbar(SESSION);
+
+const MY_STUDENT = DB.getOne(DB.KEYS.students, SESSION.profileId);
+
+const NAV = [
+  { id: 'dashboard',  icon: '🏠', label: 'Dashboard'       },
+  { id: 'profile',    icon: '👤', label: 'My Profile'      },
+  { id: 'attendance', icon: '📋', label: 'Attendance'      },
+  { id: 'marks',      icon: '📝', label: 'Marks / Report'  },
+  { id: 'fees',       icon: '💰', label: 'Fee Status'      },
+  { id: 'timetable',  icon: '🗓', label: 'Timetable'       },
+];
+UI.buildSidebar(NAV, 'dashboard');
+UI.initMobileSidebar();
+
+// ============================================================
+// ATTENDANCE HELPER
+// ============================================================
+function getMyAttendance() {
+  if (!MY_STUDENT) return {};
+  const attendance = DB.get(DB.KEYS.attendance).filter(a => a.studentId === MY_STUDENT.id);
+  const subjects   = DB.get(DB.KEYS.subjects).filter(s => s.deptId === MY_STUDENT.deptId);
+  const result = {};
+  subjects.forEach(sub => {
+    const recs    = attendance.filter(a => a.subjectId === sub.id);
+    const present = recs.filter(a => a.status === 'present').length;
+    const total   = recs.length;
+    const pct     = total ? Math.round(present/total*100) : 0;
+    result[sub.id] = { subject: sub, present, total, pct };
+  });
+  return result;
+}
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+function renderStudentDashboard() {
+  if (!MY_STUDENT) { document.getElementById('student-tagline').textContent = 'Student profile not found.'; return; }
+
+  const depts   = DB.get(DB.KEYS.departments);
+  const courses = DB.get(DB.KEYS.courses);
+  const dept    = depts.find(d => d.id === MY_STUDENT.deptId);
+  const course  = courses.find(c => c.id === MY_STUDENT.courseId);
+  const fee     = DB.getOne(DB.KEYS.fees, MY_STUDENT.id);
+  const attMap  = getMyAttendance();
+
+  // Overall attendance
+  const totalPresent = Object.values(attMap).reduce((s,a) => s+a.present, 0);
+  const totalClasses = Object.values(attMap).reduce((s,a) => s+a.total,   0);
+  const overallAtt   = totalClasses ? Math.round(totalPresent/totalClasses*100) : 0;
+  const attLow       = Object.values(attMap).filter(a => a.pct < 75 && a.total > 0).length;
+
+  // Marks
+  const marks    = DB.get(DB.KEYS.marks).filter(m => m.studentId === MY_STUDENT.id);
+  const avgMark  = marks.length ? Math.round(marks.reduce((s,m) => s+(m.total/m.maxTotal*100),0)/marks.length) : 0;
+
+  // Fee
+  const feePct   = fee ? Math.round(fee.paid/fee.amount*100) : 0;
+  const feeSt    = fee && fee.paid >= fee.amount ? '✅ Fully Paid' : fee?.paid > 0 ? '⚠ Partial' : '🔴 Pending';
+
+  document.getElementById('student-tagline').textContent = `${MY_STUDENT.rollNo} | ${course?.name||''} | Year ${MY_STUDENT.year}`;
+
+  document.getElementById('student-stats').innerHTML =
+    UI.statCard('Overall Attendance', overallAtt+'%', '📋',
+      overallAtt<75 ? `<span class="text-danger">⚠ Below 75% threshold</span>` : '✅ Good standing') +
+    UI.statCard('Academic Score', avgMark+'%', '📊',
+      `Grade: ${UI.grade(avgMark)}`) +
+    UI.statCard('Fee Status', feeSt, '💰',
+      fee ? `Paid: ₹${fee.paid.toLocaleString('en-IN')}` : '') +
+    UI.statCard('Department', dept?.code||'—', '🏫',
+      `Year ${MY_STUDENT.year}`);
+
+  // Attendance overview
+  document.getElementById('dash-att-overview').innerHTML = Object.values(attMap).slice(0,5).map(a => {
+    const cls = a.pct >= 75 ? 'good' : a.pct >= 60 ? 'warning' : 'danger';
+    const warn= a.pct < 75 && a.total > 0;
+    return `<div style="margin-bottom:.75rem;">
+      <div style="display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:.3rem;">
+        <span style="font-weight:${warn?'700':'500'};color:${warn?'var(--danger)':'var(--text)'};">${a.subject.code}${warn?' ⚠':''}</span>
+        <span style="font-weight:700;">${a.pct}%</span>
+      </div>
+      <div class="att-bar-wrap"><div class="att-bar ${cls}" style="width:${a.pct}%"></div></div>
+      <div style="font-size:.72rem;color:var(--text-3);margin-top:.2rem;">${a.present}/${a.total} classes</div>
+    </div>`;
+  }).join('') || '<div class="empty-state"><p>No attendance data yet.</p></div>';
+
+  // Announcements
+  const anns = DB.get(DB.KEYS.announcements).filter(a => a.targetRoles.includes('student')).slice(0,3);
+  document.getElementById('student-announcements').innerHTML = anns.length
+    ? anns.map(a => `<div class="announcement-card">
+        <h4>${a.title}</h4>
+        <p>${a.body.slice(0,100)}…</p>
+        <div class="announcement-meta">📅 ${a.date}</div>
+      </div>`).join('')
+    : '<div class="empty-state"><p>No announcements.</p></div>';
+}
+
+// ============================================================
+// PROFILE
+// ============================================================
+function renderProfile() {
+  if (!MY_STUDENT) return;
+  const depts   = DB.get(DB.KEYS.departments);
+  const courses = DB.get(DB.KEYS.courses);
+  const dept    = depts.find(d => d.id === MY_STUDENT.deptId);
+  const course  = courses.find(c => c.id === MY_STUDENT.courseId);
+
+  document.getElementById('student-profile').innerHTML = `
+    <div style="display:flex;align-items:center;gap:1.5rem;margin-bottom:1.5rem;flex-wrap:wrap;">
+      <div style="width:72px;height:72px;border-radius:50%;background:var(--student-accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.8rem;font-weight:700;flex-shrink:0;">
+        ${MY_STUDENT.name.charAt(0)}
+      </div>
+      <div>
+        <h3 style="font-size:1.2rem;font-weight:800;">${MY_STUDENT.name}</h3>
+        <p style="color:var(--text-2);">${MY_STUDENT.rollNo}</p>
+        <span class="badge badge-info">${dept?.name||''}</span>
+      </div>
+    </div>
+    <div class="row-2">
+      ${profileField('Course',      course?.name||'—')}
+      ${profileField('Year',        'Year '+MY_STUDENT.year)}
+      ${profileField('Department',  dept?.name||'—')}
+      ${profileField('Gender',      MY_STUDENT.gender||'—')}
+      ${profileField('Date of Birth', MY_STUDENT.dob||'—')}
+      ${profileField('Phone',       MY_STUDENT.phone||'—')}
+      ${profileField('Email',       MY_STUDENT.email||'—')}
+      ${profileField('Address',     MY_STUDENT.address||'—')}
+    </div>`;
+}
+
+function profileField(label, value) {
+  return `<div style="margin-bottom:.875rem;">
+    <div style="font-size:.75rem;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.2rem;">${label}</div>
+    <div style="font-size:.92rem;font-weight:500;">${value}</div>
+  </div>`;
+}
+
+function requestEdit() {
+  UI.toast('Edit request submitted! Admin will update your profile.', 'info');
+}
+
+// ============================================================
+// ATTENDANCE REPORT
+// ============================================================
+function renderAttendanceReport() {
+  if (!MY_STUDENT) return;
+  const attMap = getMyAttendance();
+  const subjects = Object.values(attMap);
+
+  if (!subjects.length) {
+    document.getElementById('attendance-report').innerHTML = '<div class="empty-state"><p>No attendance data yet.</p></div>';
+    return;
+  }
+
+  // Warning banner
+  const lowSubjects = subjects.filter(a => a.pct < 75 && a.total > 0);
+  const warnHtml = lowSubjects.length
+    ? `<div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:var(--radius);padding:1rem 1.25rem;margin-bottom:1rem;">
+        <strong style="color:var(--danger);">⚠ Low Attendance Warning</strong>
+        <p style="font-size:.88rem;color:#b91c1c;margin-top:.35rem;">You have low attendance (&lt;75%) in: ${lowSubjects.map(a=>a.subject.code).join(', ')}</p>
+      </div>` : '';
+
+  const rows = subjects.map(a => {
+    const cls  = a.pct >= 75 ? 'good' : a.pct >= 60 ? 'warning' : 'danger';
+    const bcls = a.pct >= 75 ? 'badge-success' : a.pct >= 60 ? 'badge-warning' : 'badge-danger';
+    return `<tr>
+      <td data-label="Subject Code">${a.subject.code}</td>
+      <td data-label="Subject Name"><strong>${a.subject.name}</strong></td>
+      <td data-label="Present">${a.present}</td>
+      <td data-label="Total">${a.total}</td>
+      <td data-label="Percentage">
+        <div style="display:flex;align-items:center;gap:.5rem;">
+          <div class="att-bar-wrap" style="min-width:80px;"><div class="att-bar ${cls}" style="width:${a.pct}%"></div></div>
+          <span class="badge ${bcls}">${a.pct}%</span>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('attendance-report').innerHTML = warnHtml + `
+    <div class="card">
+      <div class="card-body">
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead><tr>
+              <th>Code</th><th>Subject</th><th>Present</th><th>Total Classes</th><th>Attendance %</th>
+            </tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ============================================================
+// MARKS / REPORT CARD
+// ============================================================
+function renderMarksReport() {
+  if (!MY_STUDENT) return;
+  const marks    = DB.get(DB.KEYS.marks).filter(m => m.studentId === MY_STUDENT.id);
+  const subjects = DB.get(DB.KEYS.subjects).filter(s => s.deptId === MY_STUDENT.deptId);
+
+  if (!marks.length) {
+    document.getElementById('marks-report').innerHTML = '<div class="empty-state"><p>No marks published yet.</p></div>';
+    return;
+  }
+
+  let totalScored = 0, totalMax = 0;
+  const rows = subjects.map(sub => {
+    const m = marks.find(x => x.subjectId === sub.id);
+    if (!m) return '';
+    const pct   = Math.round(m.total / m.maxTotal * 100);
+    const grade = UI.grade(pct);
+    const grCls = grade === 'O' ? 'grade-O' : grade === 'A+' ? 'grade-Ap' : grade === 'A' ? 'grade-A' :
+                  grade === 'B+' ? 'grade-Bp' : grade === 'B' ? 'grade-B' : grade === 'C' ? 'grade-C' : 'grade-F';
+    totalScored += m.total;
+    totalMax    += m.maxTotal;
+    return `<tr>
+      <td data-label="Code">${sub.code}</td>
+      <td data-label="Subject"><strong>${sub.name}</strong></td>
+      <td data-label="Internal 1">${m.internal1} / ${m.maxInternal1}</td>
+      <td data-label="Internal 2">${m.internal2} / ${m.maxInternal2}</td>
+      <td data-label="Assignment">${m.assignment} / ${m.maxAssignment}</td>
+      <td data-label="Total" style="font-weight:700;">${m.total} / ${m.maxTotal}</td>
+      <td data-label="%" style="font-weight:700;">${pct}%</td>
+      <td data-label="Grade"><span class="mark-circle ${grCls}">${grade}</span></td>
+    </tr>`;
+  }).join('');
+
+  const overallPct = totalMax ? Math.round(totalScored/totalMax*100) : 0;
+  const ovGrade    = UI.grade(overallPct);
+
+  document.getElementById('marks-report').innerHTML = `
+    <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
+      <div class="stat-card" style="flex:1;min-width:140px;">
+        <div class="stat-icon">🏆</div>
+        <div class="stat-body">
+          <div class="stat-value">${overallPct}%</div>
+          <div class="stat-label">Overall Score</div>
+        </div>
+      </div>
+      <div class="stat-card" style="flex:1;min-width:140px;">
+        <div class="stat-icon">🎖</div>
+        <div class="stat-body">
+          <div class="stat-value">${ovGrade}</div>
+          <div class="stat-label">Overall Grade</div>
+        </div>
+      </div>
+      <div class="stat-card" style="flex:1;min-width:140px;">
+        <div class="stat-icon">📊</div>
+        <div class="stat-body">
+          <div class="stat-value">${totalScored} / ${totalMax}</div>
+          <div class="stat-label">Total Marks</div>
+        </div>
+      </div>
+    </div>
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead><tr>
+          <th>Code</th><th>Subject</th>
+          <th>Internal 1<br/><small>(/30)</small></th>
+          <th>Internal 2<br/><small>(/30)</small></th>
+          <th>Assignment<br/><small>(/15)</small></th>
+          <th>Total<br/><small>(/75)</small></th>
+          <th>%</th><th>Grade</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <div style="padding:.875rem 1rem;background:var(--bg);border-radius:8px;margin-top:1rem;font-size:.82rem;color:var(--text-2);">
+      <strong>Grade Scale:</strong> O ≥ 90% | A+ ≥ 80% | A ≥ 70% | B+ ≥ 60% | B ≥ 50% | C ≥ 40% | F &lt; 40%
+    </div>`;
+}
+
+// ============================================================
+// FEE STATUS
+// ============================================================
+function renderFeeStatus() {
+  if (!MY_STUDENT) return;
+  const fee = DB.getOne(DB.KEYS.fees, MY_STUDENT.id);
+  if (!fee) {
+    document.getElementById('fee-summary').innerHTML = '<div class="empty-state"><p>No fee record found.</p></div>';
+    return;
+  }
+
+  const pending = fee.amount - fee.paid;
+  const pct     = Math.round(fee.paid/fee.amount*100);
+  const status  = fee.paid >= fee.amount ? 'Fully Paid' : fee.paid > 0 ? 'Partial' : 'Pending';
+  const stCls   = fee.paid >= fee.amount ? 'badge-success' : fee.paid > 0 ? 'badge-warning' : 'badge-danger';
+
+  document.getElementById('fee-summary').innerHTML =
+    UI.statCard('Total Fee',       '₹'+fee.amount.toLocaleString('en-IN'), '💰') +
+    UI.statCard('Amount Paid',     '₹'+fee.paid.toLocaleString('en-IN'),   '✅') +
+    UI.statCard('Pending Amount',  '₹'+pending.toLocaleString('en-IN'),    '⏳') +
+    `<div class="stat-card">
+      <div class="stat-icon">📊</div>
+      <div class="stat-body">
+        <div class="stat-value">${pct}%</div>
+        <div class="stat-label">Paid</div>
+        <div style="margin-top:.5rem;"><span class="badge ${stCls}">${status}</span></div>
+      </div>
+    </div>`;
+
+  document.getElementById('fee-history').innerHTML = fee.history.length
+    ? `<div class="table-wrapper">
+        <table class="data-table">
+          <thead><tr><th>Date</th><th>Amount</th><th>Mode</th><th>Reference</th></tr></thead>
+          <tbody>
+            ${fee.history.map(h => `<tr>
+              <td data-label="Date">${h.date}</td>
+              <td data-label="Amount"><strong>₹${h.amount.toLocaleString('en-IN')}</strong></td>
+              <td data-label="Mode">${h.mode}</td>
+              <td data-label="Reference"><code>${h.ref}</code></td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>`
+    : '<div class="empty-state"><p>No payments made yet.</p></div>';
+
+  if (pending > 0) {
+    document.getElementById('fee-history').innerHTML +=
+      `<div style="margin-top:1rem;padding:1rem;background:#fef9c3;border-radius:8px;font-size:.88rem;color:#854d0e;">
+        ⚠ <strong>₹${pending.toLocaleString('en-IN')} pending</strong> — Due by ${fee.dueDate}. Please visit the accounts office.
+      </div>`;
+  }
+}
+
+// ============================================================
+// TIMETABLE
+// ============================================================
+function renderStudentTimetable() {
+  if (!MY_STUDENT) return;
+  const timetable = DB.get(DB.KEYS.timetable).filter(t => t.deptId === MY_STUDENT.deptId);
+  const subjects  = DB.get(DB.KEYS.subjects);
+  const staff     = DB.get(DB.KEYS.staff);
+  const days      = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
+  const periods   = [1,2,3,4,5];
+  const times     = { 1:'09:00-10:00', 2:'10:00-11:00', 3:'11:15-12:15', 4:'13:00-14:00', 5:'14:00-15:00' };
+  const todayName = new Date().toLocaleDateString('en-US',{weekday:'long'});
+
+  let grid = `<div class="timetable-grid" role="grid" aria-label="Weekly timetable">
+    <div class="tt-header" role="columnheader">Time</div>
+    ${days.map(d=>`<div class="tt-header ${d===todayName?'today-highlight':''}" role="columnheader">${d}</div>`).join('')}`;
+
+  periods.forEach(p => {
+    grid += `<div class="tt-time">${times[p]}</div>`;
+    days.forEach(day => {
+      const slot = timetable.find(t => t.day === day && t.period === p);
+      if (slot) {
+        const sub  = subjects.find(s => s.id === slot.subjectId);
+        const stf  = staff.find(s => s.id === slot.staffId);
+        grid += `<div class="tt-cell tt-filled ${day===todayName?'today-highlight':''}">
+          <div class="tt-subject">${sub?.code||'?'}</div>
+          <div class="tt-staff">${stf?.name.split(' ').slice(-1)[0]||''}</div>
+          <div class="tt-room">🚪 ${slot.room}</div>
+        </div>`;
+      } else {
+        grid += `<div class="tt-cell tt-empty"></div>`;
+      }
+    });
+  });
+  grid += '</div>';
+  document.getElementById('student-timetable').innerHTML = grid;
+}
+
+// Init all sections
+renderStudentDashboard();
+renderProfile();
+renderAttendanceReport();
+renderMarksReport();
+renderFeeStatus();
+renderStudentTimetable();
+</script>
+</body>
+</html>
