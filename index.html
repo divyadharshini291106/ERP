@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MIT College ERP — Login</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+</head>
+<body class="login-page">
+
+<main class="login-card" role="main">
+  <div class="login-header">
+    <div class="login-logo" aria-hidden="true">🏛️</div>
+    <h1>MIT College ERP</h1>
+    <p>Mangalore Institute of Technology</p>
+  </div>
+
+  <div class="login-body">
+    <h2>Sign in to your portal</h2>
+
+    <div class="demo-credentials" role="note" aria-label="Demo credentials">
+      <strong>🔑 Demo Credentials</strong>
+      <div class="demo-row"><span class="demo-role">Admin:</span> <code>admin</code> / <code>admin123</code></div>
+      <div class="demo-row"><span class="demo-role">Staff:</span> <code>staff1</code> / <code>staff123</code></div>
+      <div class="demo-row"><span class="demo-role">Student:</span> <code>student1</code> / <code>student123</code></div>
+    </div>
+
+    <div id="login-alert" role="alert" aria-live="assertive">
+      <span aria-hidden="true">⚠</span>
+      <span id="login-alert-msg"></span>
+    </div>
+
+    <form id="login-form" novalidate>
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" class="form-control"
+               placeholder="Enter your username" autocomplete="username" required />
+        <div class="form-error" id="username-error" role="alert" aria-live="polite" style="display:none"></div>
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" class="form-control"
+               placeholder="Enter your password" autocomplete="current-password" required />
+        <div class="form-error" id="password-error" role="alert" aria-live="polite" style="display:none"></div>
+      </div>
+
+      <div class="form-group">
+        <label>Select Role</label>
+        <div class="role-selector" role="group" aria-label="Role selection">
+          <button type="button" class="role-btn admin-btn selected" data-role="admin" aria-pressed="true">
+            🛡 Admin
+          </button>
+          <button type="button" class="role-btn staff-btn" data-role="staff" aria-pressed="false">
+            👨‍🏫 Staff
+          </button>
+          <button type="button" class="role-btn student-btn" data-role="student" aria-pressed="false">
+            🎓 Student
+          </button>
+        </div>
+        <div class="form-error" id="role-error" role="alert" aria-live="polite" style="display:none"></div>
+      </div>
+
+      <input type="hidden" id="selected-role" value="admin" />
+
+      <button type="submit" class="btn btn-primary btn-block" id="login-btn" style="margin-top:.5rem;">
+        Sign In →
+      </button>
+    </form>
+
+    <div style="margin-top:1.25rem; text-align:center;">
+      <button class="btn btn-secondary btn-sm" onclick="resetAndReload()" title="Wipes localStorage and re-seeds sample data">
+        🔄 Reset Demo Data
+      </button>
+    </div>
+  </div>
+</main>
+
+<script src="js/data.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/ui.js"></script>
+<script>
+  // If already logged in, redirect
+  (function () {
+    const s = Auth.getSession();
+    if (s) window.location.href = s.role + '.html';
+  })();
+
+  // Seed data on first load
+  seedData();
+
+  // Role button toggle
+  const roleBtns = document.querySelectorAll('.role-btn');
+  const selectedRoleInput = document.getElementById('selected-role');
+  roleBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      roleBtns.forEach(b => { b.classList.remove('selected'); b.setAttribute('aria-pressed', 'false'); });
+      btn.classList.add('selected'); btn.setAttribute('aria-pressed', 'true');
+      selectedRoleInput.value = btn.dataset.role;
+      clearErrors();
+    });
+  });
+
+  function clearErrors() {
+    document.querySelectorAll('.form-error').forEach(e => { e.style.display = 'none'; e.textContent = ''; });
+    document.querySelectorAll('.form-control').forEach(e => e.classList.remove('error'));
+    document.getElementById('login-alert').classList.remove('show');
+  }
+
+  function showFieldError(fieldId, msg) {
+    const field = document.getElementById(fieldId);
+    const err   = document.getElementById(fieldId + '-error');
+    field.classList.add('error');
+    err.textContent = '⚠ ' + msg;
+    err.style.display = 'flex';
+  }
+
+  function showAlert(msg) {
+    const a = document.getElementById('login-alert');
+    document.getElementById('login-alert-msg').textContent = msg;
+    a.classList.add('show');
+  }
+
+  document.getElementById('login-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    clearErrors();
+
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+    const role     = selectedRoleInput.value;
+
+    let valid = true;
+    if (!username) { showFieldError('username', 'Username is required.'); valid = false; }
+    if (!password) { showFieldError('password', 'Password is required.'); valid = false; }
+    if (!valid) return;
+
+    const result = Auth.login(username, password, role);
+    if (!result.ok) {
+      showAlert(result.error);
+      document.getElementById('username').focus();
+      return;
+    }
+    window.location.href = role + '.html';
+  });
+
+  function resetAndReload() {
+    if (confirm('This will reset all demo data. Continue?')) {
+      resetDemoData();
+      UI.toast('Demo data reset successfully!', 'success');
+    }
+  }
+</script>
+</body>
+</html>
